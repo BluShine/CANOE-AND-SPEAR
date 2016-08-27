@@ -30,6 +30,7 @@ function make_canoe(x, y)
  a.wasl = false 
  -- if last stroke was left
  a.st = 0 --stroke time
+ a.col = 8 --color
  
  add(canoes,a)
  
@@ -117,50 +118,55 @@ function move_canoe(a)
 end
 
 function paddle_c(a)
+ pwr = (pl.st / 30) + .5
  if(a.dir == 0) then 
-  a.dy = -1
+  a.dy = -1 * pwr
  elseif(a.dir == 1) then 
-  a.dy = -.71
-  a.dx = .71
+  a.dy = -.71 * pwr
+  a.dx = .71 * pwr
  elseif(a.dir == 2) then 
-  a.dx = 1
+  a.dx = 1 * pwr
  elseif(a.dir == 3) then 
-  a.dy = .71
-  a.dx = .71
+  a.dy = .71 * pwr
+  a.dx = .71 * pwr
  elseif(a.dir == 4) then 
-  a.dy = 1
+  a.dy = 1 * pwr
  elseif(a.dir == 5) then 
-  a.dy = .71
-  a.dx = -.71
+  a.dy = .71 * pwr
+  a.dx = -.71 * pwr
  elseif(a.dir == 6) then 
-  a.dx = -1
+  a.dx = -1 * pwr
  elseif(a.dir == 7) then 
-  a.dy = -.71
-  a.dx = -.71
+  a.dy = -.71 * pwr
+  a.dx = -.71 * pwr
  end
 end
 
 function control_player(pl)
-
- -- how fast to accelerate
- accel = 0.1
- if (btn(0)) then 
+ -- if both or neither are
+ -- pressed, do nothing.
+ -- otherwise, paddle or turn
+ if(btn(0) and btn(1)) then
+  pl.st = 0
+ elseif (btn(0)) then 
   if(pl.st == 0
    and pl.wasl) then
    pl.dir = (pl.dir - 1) % 8
-  elseif(pl.st < 30) then
+   pl.st = 1
+  elseif(pl.st <= 15) then
     paddle_c(pl)
+	pl.st += 1
   end
-  pl.st += 1
   pl.wasl = true
  elseif (btn(1)) then 
   if(pl.st == 0 
    and not pl.wasl) then
    pl.dir = (pl.dir + 1) % 8
-  elseif(pl.st < 30) then
+   pl.st = 1
+  elseif(pl.st <= 15) then
     paddle_c(pl)
+	pl.st += 1
   end
-  pl.st += 1
   pl.wasl = false
  else
   pl.st = 0
@@ -184,16 +190,73 @@ end
 function draw_canoe(a)
  local sx = a.x - 4
  local sy = a.y - 4
- if(a.dir == 0 or a.dir == 4) 
-  then spr(a.spr, sx, sy)
- elseif(a.dir == 1 or a.dir == 5) 
-  then spr(a.spr + 1, sx, sy)
- elseif(a.dir == 2 or a.dir == 6) 
-  then spr(a.spr + 2, sx, sy)
- elseif(a.dir == 3 or a.dir == 7) 
-  then spr(a.spr + 1, sx, sy, 
+ local padRot = 0 
+ --draw canoe, cursor, paddle
+ if(a.dir == 0) then 
+  spr(a.spr, sx, sy)
+  spr(21, sx, sy)
+ elseif(a.dir == 1) then 
+  padRot = .12
+  spr(a.spr + 1, sx, sy)
+  spr(22, sx, sy)
+ elseif(a.dir == 2) then 
+  padRot = .25
+  spr(a.spr + 2, sx, sy)
+  spr(23, sx, sy)
+ elseif(a.dir == 3) then 
+  padRot = .37
+  spr(a.spr + 1, sx, sy, 
    1, 1, true)
+  spr(22, sx, sy, 1, 1, 
+   false, true)
+ elseif(a.dir == 4) then 
+  padRot = .5
+  spr(a.spr, sx, sy)
+  spr(21, sx, sy, 1, 1, 
+   false, true)
+ elseif(a.dir == 5) then 
+  padRot = .62
+  spr(a.spr + 1, sx, sy)
+  spr(22, sx, sy, 1, 1, 
+   true, true)
+ elseif(a.dir == 6) then 
+  padRot = .75
+  spr(a.spr + 2, sx, sy)
+  spr(23, sx, sy, 1, 1, 
+   true)
+ elseif(a.dir == 7) then 
+  padRot = .87
+  spr(a.spr + 1, sx, sy, 
+   1, 1, true)
+  spr(22, sx, sy, 1, 1, 
+   true)
  end
+ -- paddle rotation
+ local sign = 0;
+ if(a.wasl) then
+  padRot -= .15
+  sign = -1
+ else
+  padRot += .15
+  sign = 1
+ end
+ 
+ if(a.st > 15) then 
+  padRot += .25 * sign
+ else
+  padRot += (a.st / 15) 
+   * .25 * sign
+ end
+ draw_paddle(a.x - .5, a.y - .5, padRot)
+ --player color marker
+ rectfill(a.x - 1, a.y - 1, 
+  a.x, a.y, a.col)
+end
+
+function draw_paddle(x, y, rot)
+ line(x, y, 
+  x - sin(rot) * 4, 
+  y - cos(rot) * 4, 2)
 end
 
 function _draw()
@@ -215,11 +278,11 @@ __gfx__
 00000000bbbbbbbb7ddd55576dddd555ccccccccccccc77c99999999aaaaaaaa7777777700000000000000000000000000000000000000000000000000000000
 00000000bbbbbbbbc7dd557c6dddd555cccccccccccc7cc799999999aaaaaaaa7777777700000000000000000000000000000000000000000000000000000000
 00000000bbbbbbbbcc7777cc77777777cccccccccccccccc99999999aaaaaaaa7777777700000000000000000000000000000000000000000000000000000000
-aaaaaaaa000220000000000000000000400000000000000000000000000000000000000000000000000000000000000000000000000000000000700000000000
-a000000a00244200000022200000000000040000000aa000000000a0000000000000a0000000000000000aa00000000000077000007007000700007000000000
-a000000a00244200000244200222222000111104000000000000000000000000000aaa0000000000000007a00007700000700700070000700000000000000000
-a000000a002882000028842024488442011144100000000000000000000000a00000700000000a00000070000070070007000070000000007000000000000000
-a000000a002882000248820024488442011111100000000000000000000000a00000700007777aa0000700000070070007000070000000000000000700000000
+aaaaaaaa000220000000000000000000400000000001100000000000000000000000000000000000000000000000000000000000000000000000700000000000
+a000000a002442000000222000000000000400000000000000000110000000000000a0000000000000000aa00000000000077000007007000700007000000000
+a000000a00244200000244200222222000111104000000000000001000000000000aaa0000000000000007a00007700000700700070000700000000000000000
+a000000a002882000028842024488442011144100000000000000000000000010000700000000a00000070000070070007000070000000007000000000000000
+a000000a002882000248820024488442011111100000000000000000000000010000700007777aa0000700000070070007000070000000000000000700000000
 a000000a002442000244200002222220004111000000000000000000000000000000700000000a00007000000007700000700700070000700000000000000000
 a000000a002442000222000000000000000000400000000000000000000000000000700000000000000000000000000000077000007007000700007000000000
 aaaaaaaa000220000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000007000000000000
