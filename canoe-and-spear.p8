@@ -160,7 +160,13 @@ function init_battle()
   local ai
   for i=1,5 do
    ai = make_canoe(
-    8+rnd(88), 8+rnd(88))
+    12+rnd(88), 12+rnd(88))
+   -- remove them from walls
+   while(solid_area(
+    ai.x,ai.y,ai.w, ai.h)) do
+	ai.x = 12+rnd(88)
+	ai.y = 12+rnd(88)
+   end
    ai.col = 1
    ai.dir = flr(rnd(8))
    ais += 1
