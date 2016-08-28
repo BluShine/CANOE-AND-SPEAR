@@ -404,7 +404,7 @@ function control_canoe(a)
   lbtn = btn(0, a.pl)
   rbtn = btn(1, a.pl)
   fbtn = btnp(4, a.pl)
- elseif(a.pl == -1)
+ elseif(a.pl == -1) then
   -- random ai
   if(a.st > 12 + rnd(5)) then
    lbtn = rnd(1) < .5
@@ -415,7 +415,7 @@ function control_canoe(a)
    rbtn = not a.wasl
   end
   fbtn = rnd(1) < .05
- elseif(a.pl == -2)
+ elseif(a.pl == -2) then
   --proximity chasing ai
  end
  if(lbtn and rbtn) then
@@ -425,7 +425,9 @@ function control_canoe(a)
   if(not a.ldown) a.st = 0
   if(a.st == 0
    and a.wasl) then
-   a.dir = (a.dir - 1) % 8
+   if(a.tt >= 5) then
+    a.dir = (a.dir - 1) % 8
+	a.tt = 0 end
    a.st = 1
   elseif(a.st <= 15) then
     paddle_c(a)
@@ -438,7 +440,9 @@ function control_canoe(a)
   if(not a.rdown) a.st = 0
   if(a.st == 0 
    and not a.wasl) then
-   a.dir = (a.dir + 1) % 8
+   if(a.tt >= 5) then
+    a.dir = (a.dir + 1) % 8
+	a.tt = 0 end
    a.st = 1
   elseif(a.st <= 15) then
     paddle_c(a)
@@ -453,6 +457,7 @@ function control_canoe(a)
  end
  a.ldown = lbtn
  a.rdown = rbtn
+ a.tt += 1
  
  a.ct = max(a.ct - 1, 0)
  if(fbtn and a.ct == 0) then
