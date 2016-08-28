@@ -30,6 +30,7 @@ function make_canoe(x, y)
  -- if last stroke was left
  a.st = 0 --stroke time
  a.col = 8 --color
+ a.pl = -1 --player, -1 = AI
  
  add(canoes,a)
  
@@ -104,6 +105,15 @@ end
 function _init()
  -- make player top left
  pl = make_canoe(16,16) 
+ pl.pl = 0
+ --make some ais
+ local ai
+ for i=1,5 do
+  ai = make_canoe(
+   8+rnd(88), 8+rnd(88))
+  ai.col = 1
+  ai.dir = flr(rnd(8))
+ end
 end
 
 -- for any given point on the
@@ -184,7 +194,8 @@ function move_spear(a)
  a.x += a.dx
  a.y += a.dy
  a.life -= 1
- if (a.life == 0) then
+ if (a.life == 0 or 
+  solid(a.x + a.hitx, a.y + a.hity)) then
   destroy_spear(a) end
 end
 
@@ -217,52 +228,71 @@ function paddle_c(a)
  end
 end
 
-function control_player(pl)
+function control_canoe(a)
  -- if both or neither are
  -- pressed, do nothing.
  -- otherwise, paddle or turn
- if(btn(0) and btn(1)) then
-  pl.st = 0
- elseif (btn(0)) then 
-  if(pl.st == 0
-   and pl.wasl) then
-   pl.dir = (pl.dir - 1) % 8
-   pl.st = 1
-  elseif(pl.st <= 15) then
-    paddle_c(pl)
-	pl.st += 1
-  end
-  pl.wasl = true
- elseif (btn(1)) then 
-  if(pl.st == 0 
-   and not pl.wasl) then
-   pl.dir = (pl.dir + 1) % 8
-   pl.st = 1
-  elseif(pl.st <= 15) then
-    paddle_c(pl)
-	pl.st += 1
-  end
-  pl.wasl = false
+ local lBtn = false
+ local rBtn = false
+ local fBtn = false
+ if(a.pl >= 0) then
+  lBtn = btn(0, a.pl)
+  rBtn = btn(1, a.pl)
+  fBtn = btnp(4, a.pl)
  else
-  pl.st = 0
+  -- random ai
+  if(a.st > 12 + rnd(5)) then
+   lBtn = rnd(1) < .5
+   rBtn = not lBtn
+   a.st = 0
+  else
+   lBtn = a.wasl
+   rBtn = not a.wasl
+  end
+  fBtn = rnd(1) < .05
+ end
+ if(lBtn and rBtn) then
+  a.st = 0
+ elseif (lBtn) then 
+  if(a.st == 0
+   and a.wasl) then
+   a.dir = (a.dir - 1) % 8
+   a.st = 1
+  elseif(a.st <= 15) then
+    paddle_c(a)
+	a.st += 1
+  end
+  a.wasl = true
+ elseif (rBtn) then 
+  if(a.st == 0 
+   and not a.wasl) then
+   a.dir = (a.dir + 1) % 8
+   a.st = 1
+  elseif(a.st <= 15) then
+    paddle_c(a)
+	a.st += 1
+  end
+  a.wasl = false
+ else
+  a.st = 0
  end
  
- if(btnp(4)) then
-  make_spear(pl)
+ if(fBtn) then
+  make_spear(a)
  end
 
  -- play a sound if moving
  -- (every 4 ticks)
  
- if (abs(pl.dx)+abs(pl.dy) > 0.1
-     and (pl.t%4) == 0) then
+ if (abs(a.dx)+abs(a.dy) > 0.1
+     and (a.t%4) == 0) then
   sfx(1)
  end
  
 end
 
 function _update()
- control_player(pl)
+ foreach(canoes, control_canoe)
  foreach(canoes, move_canoe)
  foreach(spears, move_spear)
 end
