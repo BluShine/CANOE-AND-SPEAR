@@ -9,6 +9,11 @@ __lua__
 canoes = {} --all the canoes
 spears = {} --all the spears
 
+win = false
+ais = 0
+mode = 0
+level = 0
+
 -- make a canoe
 -- and add to global collection
 function make_canoe(x, y)
@@ -113,6 +118,7 @@ function _init()
    8+rnd(88), 8+rnd(88))
   ai.col = 1
   ai.dir = flr(rnd(8))
+  ais += 1
  end
 end
 
@@ -211,7 +217,7 @@ function move_spear(a)
  can = solid_canoe(a.x + a.hitx, a.y + a.hity)
  if(can > 0) then
   destroy_spear(a)
-  canoes[can].col = 11
+  destroy_canoe(canoes[can])
  elseif (a.life == 0 or 
   solid(a.x + a.hitx, a.y + a.hity)) then
   destroy_spear(a) end
@@ -219,6 +225,13 @@ end
 
 function destroy_spear(a)
  del(spears, a)
+end
+
+function destroy_canoe(a)
+ del(canoes, a)
+ if(a.pl == -1) then ais -= 1
+ else run() end
+ if(ais == 0) win = true
 end
 
 function paddle_c(a)
@@ -400,6 +413,10 @@ function _draw()
  map(0,0,0,0,16,16)
  foreach(canoes,draw_canoe)
  foreach(spears,draw_spear)
+ 
+ if(win) then 
+  print("you win", 16, 16, flr(rnd(16)))
+ end
  
  print("mem "..stat(0),0,120,7)
  print("cpu "..stat(1),64,120,7)
