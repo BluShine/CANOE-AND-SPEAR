@@ -6,12 +6,11 @@ __lua__
 -- collisions from collision demo
 -- by zep
 
-canoes = {} --all actors in world
+canoes = {} --all the canoes
+spears = {} --all the spears
 
--- make an actor
+-- make a canoe
 -- and add to global collection
--- x,y means center of the actor
--- in map tiles (not pixels)
 function make_canoe(x, y)
  a={}
  a.x = x
@@ -25,8 +24,8 @@ function make_canoe(x, y)
  a.bounce = 0.5
  a.dir = 0 -- facing direction
  -- 0=n, 1=ne, 2=e, clockwise
- a.w = .25
- a.h = .45
+ a.w = 2
+ a.h = 2.5
  a.wasl = false 
  -- if last stroke was left
  a.st = 0 --stroke time
@@ -35,6 +34,71 @@ function make_canoe(x, y)
  add(canoes,a)
  
  return a
+end
+
+-- throw a spear from a canoe
+function make_spear(c)
+ a={}
+ a.x = c.x - 4
+ a.y = c.y - 4
+ a.dx = 0
+ a.dy = 0
+ a.life = 15
+ a.spr = 24
+ a.fx = false
+ a.fy = false
+ a.hitx = 1 -- hitbox offset
+ a.hity = 1
+ if(c.dir == 0) then
+  a.dy = -1.5
+  a.hitx = 4
+ elseif(c.dir == 1) then
+  a.dx = 1.06
+  a.dy = -1.06
+  a.spr = 26
+  a.hitx = 6
+ elseif(c.dir == 2) then
+  a.dx = 1.5
+  a.spr = 25
+  a.hitx = 7
+  a.hity = 4
+ elseif(c.dir == 3) then
+  a.dx = 1.06
+  a.dy = 1.06
+  a.spr = 26
+  a.fy = true
+  a.hitx = 6
+  a.hity = 6
+ elseif(c.dir == 4) then
+  a.dy = 1.5
+  a.fy = true
+  a.fx = true
+  a.hitx = 3
+  a.hity = 6
+ elseif(c.dir == 5) then
+  a.dx = -1.06
+  a.dy = 1.06
+  a.spr = 26
+  a.fy = true
+  a.fx = true
+  a.hitx = 1
+  a.hity = 6
+ elseif(c.dir == 6) then
+  a.dx = -1.5
+  a.spr = 25
+  a.fy = true
+  a.fx = true
+  a.hitx = 1
+  a.hity = 3
+ else
+  a.dx = -1.06
+  a.dy = -1.06
+  a.spr = 26
+  a.fx = true
+ end
+ a.x += a.dx * 3
+ a.y += a.dy * 3
+ add(spears,a)
 end
 
 function _init()
@@ -83,7 +147,6 @@ function solid_a(a, dx, dy)
 end
 
 function move_canoe(a)
-
  -- only move actor along x
  -- if the resulting position
  -- will not overlap with a wall
@@ -115,6 +178,18 @@ function move_canoe(a)
 
  a.t += 1
  
+end
+
+function move_spear(a) 
+ a.x += a.dx
+ a.y += a.dy
+ a.life -= 1
+ if (a.life == 0) then
+  destroy_spear(a) end
+end
+
+function destroy_spear(a)
+ del(spears, a)
 end
 
 function paddle_c(a)
@@ -171,6 +246,10 @@ function control_player(pl)
  else
   pl.st = 0
  end
+ 
+ if(btnp(4)) then
+  make_spear(pl)
+ end
 
  -- play a sound if moving
  -- (every 4 ticks)
@@ -185,47 +264,48 @@ end
 function _update()
  control_player(pl)
  foreach(canoes, move_canoe)
+ foreach(spears, move_spear)
 end
 
 function draw_canoe(a)
  local sx = a.x - 4
  local sy = a.y - 4
- local padRot = 0 
+ local padrot = 0 
  --draw canoe, cursor, paddle
  if(a.dir == 0) then 
   spr(a.spr, sx, sy)
   spr(21, sx, sy)
  elseif(a.dir == 1) then 
-  padRot = .12
+  padrot = .12
   spr(a.spr + 1, sx, sy)
   spr(22, sx, sy)
  elseif(a.dir == 2) then 
-  padRot = .25
+  padrot = .25
   spr(a.spr + 2, sx, sy)
   spr(23, sx, sy)
  elseif(a.dir == 3) then 
-  padRot = .37
+  padrot = .37
   spr(a.spr + 1, sx, sy, 
    1, 1, true)
   spr(22, sx, sy, 1, 1, 
    false, true)
  elseif(a.dir == 4) then 
-  padRot = .5
+  padrot = .5
   spr(a.spr, sx, sy)
   spr(21, sx, sy, 1, 1, 
    false, true)
  elseif(a.dir == 5) then 
-  padRot = .62
+  padrot = .62
   spr(a.spr + 1, sx, sy)
   spr(22, sx, sy, 1, 1, 
    true, true)
  elseif(a.dir == 6) then 
-  padRot = .75
+  padrot = .75
   spr(a.spr + 2, sx, sy)
   spr(23, sx, sy, 1, 1, 
    true)
  elseif(a.dir == 7) then 
-  padRot = .87
+  padrot = .87
   spr(a.spr + 1, sx, sy, 
    1, 1, true)
   spr(22, sx, sy, 1, 1, 
@@ -234,20 +314,20 @@ function draw_canoe(a)
  -- paddle rotation
  local sign = 0;
  if(a.wasl) then
-  padRot -= .15
+  padrot -= .15
   sign = -1
  else
-  padRot += .15
+  padrot += .15
   sign = 1
  end
  
  if(a.st > 15) then 
-  padRot += .25 * sign
+  padrot += .25 * sign
  else
-  padRot += (a.st / 15) 
+  padrot += (a.st / 15) 
    * .25 * sign
  end
- draw_paddle(a.x - .5, a.y - .5, padRot)
+ draw_paddle(a.x - .5, a.y - .5, padrot)
  --player color marker
  rectfill(a.x - 1, a.y - 1, 
   a.x, a.y, a.col)
@@ -259,10 +339,19 @@ function draw_paddle(x, y, rot)
   y - cos(rot) * 4, 2)
 end
 
+function draw_spear(a)
+ spr(a.spr, a.x, 
+ a.y, 1, 1,
+ a.fx, a.fy)
+ --pset(a.x + a.hitx, 
+ -- a.y + a.hity, 7)
+end
+
 function _draw()
  cls()
  map(0,0,0,0,16,16)
  foreach(canoes,draw_canoe)
+ foreach(spears,draw_spear)
  
  print("mem "..stat(0),0,120,7)
  print("cpu "..stat(1),64,120,7)
@@ -279,12 +368,12 @@ __gfx__
 00000000bbbbbbbbc7dd557c6dddd555cccccccccccc7cc799999999aaaaaaaa7777777700000000000000000000000000000000000000000000000000000000
 00000000bbbbbbbbcc7777cc77777777cccccccccccccccc99999999aaaaaaaa7777777700000000000000000000000000000000000000000000000000000000
 aaaaaaaa000220000000000000000000400000000001100000000000000000000000000000000000000000000000000000000000000000000000700000000000
-a000000a002442000000222000000000000400000000000000000110000000000000a0000000000000000aa00000000000077000007007000700007000000000
-a000000a00244200000244200222222000111104000000000000001000000000000aaa0000000000000007a00007700000700700070000700000000000000000
-a000000a002882000028842024488442011144100000000000000000000000010000700000000a00000070000070070007000070000000007000000000000000
-a000000a002882000248820024488442011111100000000000000000000000010000700007777aa0000700000070070007000070000000000000000700000000
-a000000a002442000244200002222220004111000000000000000000000000000000700000000a00007000000007700000700700070000700000000000000000
-a000000a002442000222000000000000000000400000000000000000000000000000700000000000000000000000000000077000007007000700007000000000
+a000000a002442000000222000000000000400000000000000000110000000000000500000000000000005500000000000077000007007000700007000000000
+a000000a002442000002442002222220001111040000000000000010000000000005550000000000000002500007700000700700070000700000000000000000
+a000000a002882000028842024488442011144100000000000000000000000010000200000000500000020000070070007000070000000007000000000000000
+a000000a002882000248820024488442011111100000000000000000000000010000200002222550000200000070070007000070000000000000000700000000
+a000000a002442000244200002222220004111000000000000000000000000000000200000000500002000000007700000700700070000700000000000000000
+a000000a002442000222000000000000000000400000000000000000000000000000200000000000000000000000000000077000007007000700007000000000
 aaaaaaaa000220000000000000000000000004000000000000000000000000000000000000000000000000000000000000000000000000000007000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
