@@ -31,7 +31,7 @@ function make_canoe(x, y)
  a.frame = 0
  a.t = 0 -- time
  a.drag = 0.5
- a.bounce = 0.5
+ a.bounce = 2
  a.dir = 0 -- facing direction
  -- 0=n, 1=ne, 2=e, clockwise
  a.w = 2
@@ -175,7 +175,7 @@ end
 function solid(x, y)
 
  -- grab the cell value
- val=mget(flr(x/8), flr(y/8))
+ val=mget(flr((x-4)/8), flr((y-4)/8))
  
  -- check if flag 1 is set (the
  -- orange toggle button in the 
@@ -226,14 +226,22 @@ function move_canoe(a)
  -- only move actor along x
  -- if the resulting position
  -- will not overlap with a wall
-
  if not solid_a(a, a.dx, 0) 
  then
   a.x += a.dx
  else   
   -- otherwise bounce
-  a.dx *= -a.bounce
   sfx(2)
+  --steer away from wall
+  if(a.dir == 2 or a.dir == 6) then
+   if(rnd(1)<.5) then
+    a.dir = 0 else a.dir = 4 end
+  elseif(a.dir == 1 or a.dir == 7) then
+   a.dir = 0
+  elseif(a.dir == 3 or a.dir == 5) then
+   a.dir = 4
+  end
+  a.dx *= -a.bounce
  end
 
  -- ditto for y
@@ -241,8 +249,17 @@ function move_canoe(a)
  if not solid_a(a, 0, a.dy) then
   a.y += a.dy
  else
-  a.dy *= -a.bounce
   sfx(2)
+  --steer away from wall
+  if(a.dir == 0 or a.dir == 4) then
+   if(rnd(1)<.5) then
+    a.dir = 2 else a.dir = 6 end
+  elseif(a.dir == 1 or a.dir == 3) then
+   a.dir = 2
+  elseif(a.dir == 5 or a.dir == 7) then
+   a.dir = 6
+  end
+  a.dy *= -a.bounce
  end
  
  -- apply inertia
@@ -492,17 +509,16 @@ end
 
 function draw_game()
  cls()
- map(0,0,0,0,16,16)
+ rectfill(0,0,128,112,12)
+ map(0,0,4,4,15,13)
  foreach(canoes,draw_canoe)
  foreach(spears,draw_spear)
  foreach(effects,draw_effect)
  
  if(win) then 
-  print("you win", 16, 16, flr(rnd(16)))
+  print("you win", 48, 14, flr(rnd(16)))
  end
  
- print("mem "..stat(0),0,120,7)
- print("cpu "..stat(1),64,120,7)
 end
 
 function draw_title()
@@ -532,7 +548,7 @@ function draw_title()
   spr(38, 65 + (i-1)*8, 105)
  end
  -- footer
- print("copyright (C) 2016 blushine",12, 120, 12)
+ print("copyright (c) 2016 blushine",12, 120, 12)
 end
 
 function _draw()
