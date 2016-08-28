@@ -121,6 +121,7 @@ function make_spear(c)
  a.x += a.dx * 1
  a.y += a.dy * 1
  add(spears,a)
+ sfx(6)
  return a
 end
 
@@ -327,11 +328,13 @@ function destroy_spear(a)
  del(spears, a)
  make_effect(a.x + a.hitx,
   a.y + a.hity, 27, 2)
+ sfx(7)
 end
 
 function destroy_canoe(a)
  del(canoes, a)
  make_effect(a.x, a.y, 30, 3)
+ sfx(8)
  if(a.pl == -1) then ais -= 1
  else livpl -= 1 end
  --check if round is over
@@ -400,6 +403,7 @@ function control_canoe(a)
   fbtn = rnd(1) < .05
  end
  if(lbtn and rbtn) then
+  if(a.st < 15 and a.st > 1)sfx(5)
   a.st = 0
  elseif (lbtn) then 
   if(not a.ldown) a.st = 0
@@ -410,6 +414,8 @@ function control_canoe(a)
   elseif(a.st <= 15) then
     paddle_c(a)
 	a.st += 1
+	if(a.st == 2)sfx(3)
+	if(a.st == 15)sfx(4)
   end
   a.wasl = true
  elseif (rbtn) then 
@@ -421,9 +427,12 @@ function control_canoe(a)
   elseif(a.st <= 15) then
     paddle_c(a)
 	a.st += 1
+	if(a.st == 2)sfx(3)
+	if(a.st == 15)sfx(4)
   end
   a.wasl = false
  else
+  if(a.st < 15 and a.st > 1)sfx(5)
   a.st = 0
  end
  a.ldown = lbtn
@@ -468,15 +477,15 @@ function update_title()
  end
  if(btnp(2)) then
   mselect = (mselect - 1) % 3
-  sfx(3)
+  sfx(4)
  end
  if(btnp(1)) then 
   players = players%4 + 1
-  sfx(4)
+  sfx(6)
  end
  if(btnp(0)) then
   players = (players-2)%4 + 1
-  sfx(4)
+  sfx(7)
  end
   
  if(btnp(4)) then
