@@ -15,10 +15,10 @@ win = false
 lose = false
 ais = 0
 livpl = 0
-mode = 0
 scores = {}
+mode = 0
 -- 0:title, 1:battle, 2:vs ai
--- 3:trip
+-- 3:trip 4:gameover
 players = 1
 level = 0
 round = 1
@@ -454,7 +454,11 @@ function update_game()
  elseif(ended) then
   endtime -= 1
   if(endtime == 0)then
-   init_battle()
+   if(round == 3) then
+    mode = 4
+   else
+    init_battle()
+   end
   end
  else
   foreach(canoes, control_canoe)
@@ -641,13 +645,22 @@ function draw_title()
   spr(38, 65 + (i-1)*8, 105)
  end
  -- footer
- print("copyright (c) 2016 blushine",12, 120, 12)
+ print("copyright (c) 2016 blushine",
+  12, 120, 12)
+end
+
+function draw_gameover()
+ cls()
+ for i=1,players do
+  print("player "..i..": "..scores[i], 
+   40, 10 + 20 * i, pldat[i].col)
+ end
 end
 
 function _draw()
- if(mode > 0) draw_game()
+ if(mode == 1 or mode == 2 or mode == 3) draw_game()
  if(mode == 0) draw_title()
- 
+ if(mode == 4) draw_gameover()
 end
 
 __gfx__
