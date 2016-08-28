@@ -446,6 +446,7 @@ end
 function _update()
  if(mode == 0) update_title()
  if(mode > 0) update_game()
+ if(mode == 4 and btnp(5)) init_title()
 end
 
 function update_game()
@@ -651,10 +652,26 @@ end
 
 function draw_gameover()
  cls()
+ local winner = 1
+ local winscore = 0
  for i=1,players do
   print("player "..i..": "..scores[i], 
    40, 10 + 20 * i, pldat[i].col)
+  if(scores[i] > winscore) then
+   winner = i
+   winscore = scores[i]
+  end
  end
+ 
+ if(mselect == 1) then
+  print("you win!", 
+   48, 14, 7 + flr(rnd(6)))
+ else
+  print("p"..winner.." wins!", 
+   48, 14, 7 + flr(rnd(6)))
+ end
+ 
+ print("PRESS x/v/m", 40, 120, 6)
 end
 
 function _draw()
