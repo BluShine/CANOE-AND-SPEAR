@@ -132,6 +132,20 @@ function solid(x, y)
  
 end
 
+--true if canoes are at the point
+function solid_canoe(x, y)
+ local a
+ for i=1,count(canoes) do
+  a = canoes[i]
+  if(x >= a.x-a.w and
+   x <= a.x+a.w and
+   y >= a.y-a.h and
+   y <= a.y+a.h) then
+   return i end
+  end
+  return 0
+end
+
 -- solid_area
 -- check if a rectangle overlaps
 -- with any walls
@@ -194,7 +208,11 @@ function move_spear(a)
  a.x += a.dx
  a.y += a.dy
  a.life -= 1
- if (a.life == 0 or 
+ can = solid_canoe(a.x + a.hitx, a.y + a.hity)
+ if(can > 0) then
+  destroy_spear(a)
+  canoes[can].col = 11
+ elseif (a.life == 0 or 
   solid(a.x + a.hitx, a.y + a.hity)) then
   destroy_spear(a) end
 end
