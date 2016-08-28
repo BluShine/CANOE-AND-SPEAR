@@ -22,6 +22,7 @@ lose = false
 ais = 0
 livpl = 0
 scores = {}
+gtime = 0
 mode = 0
 -- 0:title, 1:battle, 2:vs ai
 -- 3:trip 4:gameover
@@ -55,6 +56,7 @@ function make_canoe(x, y)
  a.rdown = false -- if rbtn was down
  a.ldown = false-- if lbtn was down
  a.st = 0 --stroke time
+ a.tt = 0 --turn cooldown
  a.ct = 0 --spear cooldown time
  a.col = 8 --color
  a.pl = -1 --player, -1 = ai
@@ -181,24 +183,6 @@ function init_players()
  end
 end
 
-function init_ais(num)
- --make some ais
- local ai
- for i=1,num do
-  ai = make_canoe(
-   12+rnd(88), 12+rnd(88))
-  -- remove them from walls
-  while(solid_area(
-   ai.x,ai.y,ai.w, ai.h)) do
-   ai.x = 12+rnd(88)
-   ai.y = 12+rnd(88)
-  end
-  ai.col = 1
-  ai.dir = flr(rnd(8))
-  ais += 1
- end
-end
-
 function init_battle()
  rtime = 80
  ended = false
@@ -209,7 +193,22 @@ function init_battle()
  init_players()
  if(mode == 2) then
   lvl = round
-  init_ais(8)
+  --spawn ais at flagged tiles
+  local a = {}
+  local val = 0
+  for i=0,14 do
+   for j=0,12 do
+    val=mget(lvlsx[lvl]+i,
+	 lvlsy[lvl]+j)
+	if(fget(val, 2)) then
+	 a = make_canoe(i*8+8, j*8+8)
+	 ais += 1
+	 a.col = 1
+	 --pseudorandumb direction
+	 a.dir = flr(10*sqrt(i*j))%8
+	end
+   end
+  end
  end
 end
 
@@ -405,7 +404,7 @@ function control_canoe(a)
   lbtn = btn(0, a.pl)
   rbtn = btn(1, a.pl)
   fbtn = btnp(4, a.pl)
- else
+ elseif(a.pl == -1)
   -- random ai
   if(a.st > 12 + rnd(5)) then
    lbtn = rnd(1) < .5
@@ -416,6 +415,8 @@ function control_canoe(a)
    rbtn = not a.wasl
   end
   fbtn = rnd(1) < .05
+ elseif(a.pl == -2)
+  --proximity chasing ai
  end
  if(lbtn and rbtn) then
   if(a.st < 15 and a.st > 1)sfx(5)
@@ -480,6 +481,7 @@ function update_game()
    end
   end
  elseif (not (lose or win)) then
+  gtime += 1
   foreach(canoes, control_canoe)
   foreach(canoes, move_canoe)
   foreach(spears, move_spear)
@@ -689,6 +691,9 @@ function draw_gameover()
  if(mselect == 1) then
   print("you win!", 
    48, 14, 7 + flr(rnd(6)))
+  print(flr(gtime/3600).."\'"..
+   ((gtime%3600)/60).."\"",
+   48, 22, 7)
  else
   print("p"..winner.." wins!", 
    48, 14, 7 + flr(rnd(6)))
