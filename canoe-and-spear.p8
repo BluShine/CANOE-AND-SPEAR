@@ -8,6 +8,7 @@ __lua__
 
 canoes = {} --all the canoes
 spears = {} --all the spears
+effects = {} --all the effects
 
 win = false
 ais = 0
@@ -35,7 +36,7 @@ function make_canoe(x, y)
  -- if last stroke was left
  a.st = 0 --stroke time
  a.col = 8 --color
- a.pl = -1 --player, -1 = AI
+ a.pl = -1 --player, -1 = ai
  
  add(canoes,a)
  
@@ -105,6 +106,18 @@ function make_spear(c)
  a.x += a.dx * 3
  a.y += a.dy * 3
  add(spears,a)
+ return a
+end
+
+function make_effect(x, y, s, frm)
+ a = {}
+ a.x = x - 3
+ a.y = y - 3
+ a.spr = s
+ a.frames = frm
+ a.f = 0
+ add(effects, a)
+ return a
 end
 
 function _init()
@@ -225,10 +238,13 @@ end
 
 function destroy_spear(a)
  del(spears, a)
+ make_effect(a.x + a.hitx,
+  a.y + a.hity, 27, 2)
 end
 
 function destroy_canoe(a)
  del(canoes, a)
+ make_effect(a.x, a.y, 30, 3)
  if(a.pl == -1) then ais -= 1
  else run() end
  if(ais == 0) win = true
@@ -263,28 +279,28 @@ function control_canoe(a)
  -- if both or neither are
  -- pressed, do nothing.
  -- otherwise, paddle or turn
- local lBtn = false
- local rBtn = false
- local fBtn = false
+ local lbtn = false
+ local rbtn = false
+ local fbtn = false
  if(a.pl >= 0) then
-  lBtn = btn(0, a.pl)
-  rBtn = btn(1, a.pl)
-  fBtn = btnp(4, a.pl)
+  lbtn = btn(0, a.pl)
+  rbtn = btn(1, a.pl)
+  fbtn = btnp(4, a.pl)
  else
   -- random ai
   if(a.st > 12 + rnd(5)) then
-   lBtn = rnd(1) < .5
-   rBtn = not lBtn
+   lbtn = rnd(1) < .5
+   rbtn = not lbtn
    a.st = 0
   else
-   lBtn = a.wasl
-   rBtn = not a.wasl
+   lbtn = a.wasl
+   rbtn = not a.wasl
   end
-  fBtn = rnd(1) < .05
+  fbtn = rnd(1) < .05
  end
- if(lBtn and rBtn) then
+ if(lbtn and rbtn) then
   a.st = 0
- elseif (lBtn) then 
+ elseif (lbtn) then 
   if(a.st == 0
    and a.wasl) then
    a.dir = (a.dir - 1) % 8
@@ -294,7 +310,7 @@ function control_canoe(a)
 	a.st += 1
   end
   a.wasl = true
- elseif (rBtn) then 
+ elseif (rbtn) then 
   if(a.st == 0 
    and not a.wasl) then
    a.dir = (a.dir + 1) % 8
@@ -308,7 +324,7 @@ function control_canoe(a)
   a.st = 0
  end
  
- if(fBtn) then
+ if(fbtn) then
   make_spear(a)
  end
 
@@ -408,11 +424,20 @@ function draw_spear(a)
  -- a.y + a.hity, 7)
 end
 
+function draw_effect(a)
+ spr(a.spr + a.f, a.x, a.y)
+ a.f += 1
+ if (a.f > a.frames) then
+  del(effects, a)
+ end
+end
+
 function _draw()
  cls()
  map(0,0,0,0,16,16)
  foreach(canoes,draw_canoe)
  foreach(spears,draw_spear)
+ foreach(effects,draw_effect)
  
  if(win) then 
   print("you win", 16, 16, flr(rnd(16)))
