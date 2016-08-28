@@ -9,14 +9,22 @@ __lua__
 canoes = {} --all the canoes
 spears = {} --all the spears
 effects = {} --all the effects
+pldat = {} --player tables
 
 win = false
+lose = false
 ais = 0
+livpl = 0
 mode = 0
+scores = {}
 -- 0:title, 1:battle, 2:vs ai
 -- 3:trip
 players = 1
 level = 0
+round = 1
+rtime = 0
+ended = false
+endtime = 0
 mselect = 0
 
 -- make a canoe
@@ -34,10 +42,12 @@ function make_canoe(x, y)
  a.bounce = 2
  a.dir = 0 -- facing direction
  -- 0=n, 1=ne, 2=e, clockwise
- a.w = 2
- a.h = 2.5
+ a.w = 3
+ a.h = 3.5
  a.wasl = false 
  -- if last stroke was left
+ a.rdown = false -- if rbtn was down
+ a.ldown = false-- if lbtn was down
  a.st = 0 --stroke time
  a.col = 8 --color
  a.pl = -1 --player, -1 = ai
@@ -60,6 +70,7 @@ function make_spear(c)
  a.fy = false
  a.hitx = 1 -- hitbox offset
  a.hity = 1
+ a.pl = c.pl
  if(c.dir == 0) then
   a.dy = -1.5
   a.hitx = 4
@@ -132,45 +143,64 @@ function init_title()
  mode = 0
 end
 
+function init_players()
+ -- make players
+ livpl = players
+ pl = make_canoe(20,20) 
+ pl.pl = 0
+ pl.dir = 3
+ pldat[1] = pl
+ if(players >= 2) then
+  local ptwo = make_canoe(108, 92)
+  ptwo.pl = 1
+  ptwo.col = 12
+  ptwo.dir = 7
+  pldat[2] = ptwo
+ end
+ if(players >= 3) then
+  local pthr= make_canoe(20, 92)
+  pthr.pl = 2
+  pthr.col = 10
+  pthr.dir = 1
+  pldat[3] = pthr
+ end
+ if(players >= 4) then
+  local pfor= make_canoe(108, 20)
+  pfor.pl = 3
+  pfor.col = 3
+  pfor.dir = 5
+  pldat[4] = pfor
+ end
+end
+
+function init_ais(num)
+ --make some ais
+ local ai
+ for i=1,num do
+  ai = make_canoe(
+   12+rnd(88), 12+rnd(88))
+  -- remove them from walls
+  while(solid_area(
+   ai.x,ai.y,ai.w, ai.h)) do
+   ai.x = 12+rnd(88)
+   ai.y = 12+rnd(88)
+  end
+  ai.col = 1
+  ai.dir = flr(rnd(8))
+  ais += 1
+ end
+end
+
 function init_battle()
+ rtime = 80
+ ended = false
  canoes = {}
  spears = {}
  effects = {}
- -- make players
- pl = make_canoe(16,16) 
- pl.pl = 0
- if(players >= 2 and players < 5) then
-  local ptwo = make_canoe(104, 88)
-  ptwo.pl = 1
-  ptwo.col = 12
- end
- if(players >= 3 and players < 5) then
-  local pthr= make_canoe(16, 88)
-  pthr.pl = 2
-  pthr.col = 10
- end
- if(players == 4) then
-  local pfor= make_canoe(104, 16)
-  pfor.pl = 3
-  pfor.col = 3
- end
-  
+ 
+ init_players()
  if(mode == 2) then
-  --make some ais
-  local ai
-  for i=1,5 do
-   ai = make_canoe(
-    12+rnd(88), 12+rnd(88))
-   -- remove them from walls
-   while(solid_area(
-    ai.x,ai.y,ai.w, ai.h)) do
-	ai.x = 12+rnd(88)
-	ai.y = 12+rnd(88)
-   end
-   ai.col = 1
-   ai.dir = flr(rnd(8))
-   ais += 1
-  end
+  init_ais(8)
  end
 end
 
@@ -285,6 +315,7 @@ function move_spear(a)
  a.life -= 1
  can = solid_canoe(a.x + a.hitx, a.y + a.hity)
  if(can > 0) then
+  if(a.pl != -1) scores[a.pl+1] += 1
   destroy_spear(a)
   destroy_canoe(canoes[can])
  elseif (a.life == 0 or 
@@ -302,8 +333,22 @@ function destroy_canoe(a)
  del(canoes, a)
  make_effect(a.x, a.y, 30, 3)
  if(a.pl == -1) then ais -= 1
- else run() end
- if(ais == 0) win = true
+ else livpl -= 1 end
+ --check if round is over
+ if(mode == 2) then
+  if(ais == 0) then
+   round += 1
+   endtime = 50
+   ended = true
+  end
+  if(livpl == 0) lose = true
+ elseif(mode == 1) then
+  if(livpl == 1) then
+   round += 1
+   endtime = 50
+   ended = true
+  end
+ end
 end
 
 function paddle_c(a)
@@ -357,6 +402,7 @@ function control_canoe(a)
  if(lbtn and rbtn) then
   a.st = 0
  elseif (lbtn) then 
+  if(not a.ldown) a.st = 0
   if(a.st == 0
    and a.wasl) then
    a.dir = (a.dir - 1) % 8
@@ -367,6 +413,7 @@ function control_canoe(a)
   end
   a.wasl = true
  elseif (rbtn) then 
+  if(not a.rdown) a.st = 0
   if(a.st == 0 
    and not a.wasl) then
    a.dir = (a.dir + 1) % 8
@@ -379,6 +426,8 @@ function control_canoe(a)
  else
   a.st = 0
  end
+ a.ldown = lbtn
+ a.rdown = rbtn
  
  if(fbtn) then
   make_spear(a)
@@ -400,9 +449,19 @@ function _update()
 end
 
 function update_game()
- foreach(canoes, control_canoe)
- foreach(canoes, move_canoe)
- foreach(spears, move_spear)
+ if(rtime > 0) then
+  rtime -= 1
+ elseif(ended) then
+  endtime -= 1
+  if(endtime == 0)then
+   init_battle()
+  end
+ else
+  foreach(canoes, control_canoe)
+  foreach(canoes, move_canoe)
+  foreach(spears, move_spear)
+ end
+ if((lose or win) and btnp(5)) run()
 end
 
 function update_title()
@@ -420,8 +479,17 @@ function update_title()
  end
   
  if(btnp(4)) then
-  mode = mselect + 1
-  init_battle()
+  if((players == 1 and mselect == 0)) then
+   --bad sound
+  else
+   mode = mselect + 1
+   round = 1
+   --reset scores
+   for i=1,players do
+    scores[i] = 0
+   end
+   init_battle()
+  end
  end
 end
 
@@ -515,14 +583,31 @@ end
 
 function draw_game()
  cls()
- rectfill(0,0,128,112,12)
+ local bcol = 12
+ if(win)then bcol = 10
+ elseif(lose)then bcol = 8
+ elseif(ended) then bcol = 7 end
+ rectfill(0,0,128,112,bcol)
  map(0,0,4,4,15,13)
  foreach(canoes,draw_canoe)
  foreach(spears,draw_spear)
  foreach(effects,draw_effect)
- 
- if(win) then 
+ --scores
+ for i=1,players do
+  print("p"..i..":"..scores[i],
+   i * 32 - 30, 116,pldat[i].col)
+ end
+ --game text
+ if(rtime > 0) then 
+  rectfill(46, 13, 82, 19, 1)
+  print("round "..round, 
+  48, 14, 8 + flr((80 - rtime)/27))
+ elseif(win) then 
   print("you win", 48, 14, flr(rnd(16)))
+ elseif(lose) then
+  print("you lose", 48, 14, 
+   7+flr((time()*2)%2))
+  print("PRESS x/v/m", 40, 94, 8)
  end
  
 end
@@ -537,7 +622,9 @@ function draw_title()
  spr(88, 83, 39)
  line(0, 55, 200, 55, 10)
  -- game modes
- print("a  versus game", 48, 64, 7)
+ print("a  versus game", 48, 64, 
+  7 - (players == 1 and 2 or 0)) 
+  --gray out if 1p
  print("b  ai battle game", 48, 76, 7)
  print("c  canoe trip", 48, 88, 7)
  -- cursor
