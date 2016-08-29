@@ -559,7 +559,13 @@ function update_game()
   foreach(canoes, move_canoe)
   foreach(spears, move_spear)
  end
- if((lose or win) and btnp(5)) run()
+ if((lose or win) and btnp(5)) then
+  for i=1,players do
+   scores[i] = 0
+  end
+  lose = false
+  init_battle()
+ end
 end
 
 function update_title()
@@ -710,7 +716,7 @@ function draw_game()
  elseif(lose) then
   print("you lose", 48, 14, 
    7+flr((time()*2)%2))
-  print("press x/v/m", 40, 94, 8)
+  print("press x/v/m t o continue", 14, 94, 8)
  end
  
 end
