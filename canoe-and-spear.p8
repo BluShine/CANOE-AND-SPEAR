@@ -216,6 +216,8 @@ function init_battle()
 	end
    end
   end
+ else
+  lvl = flr(rnd(count(lvlsx))+1)
  end
 end
 
@@ -695,9 +697,13 @@ function draw_game()
  if(win)then bcol = 10
  elseif(lose)then bcol = 8
  elseif(ended) then bcol = 7 end
- rectfill(0,0,128,112,bcol)
  map(lvlsx[lvl],lvlsy[lvl],4,4,
   lvlsx[lvl]+15,lvlsy[lvl]+13)
+ rectfill(0,0,4,112,bcol)
+ rectfill(0,0,128,4,bcol)
+ rectfill(124,0,128,112,bcol)
+ rectfill(0,108,128,112,bcol)
+ rectfill(0,112,128,128,0)
  foreach(canoes,draw_canoe)
  foreach(spears,draw_spear)
  foreach(effects,draw_effect)
