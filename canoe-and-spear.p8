@@ -564,7 +564,7 @@ end
 
 function update_title()
  if(btnp(3)) then 
-  mselect = (mselect + 1) % 3
+  mselect = (mselect + 1) % 2
   sfx(3)
  end
  if(btnp(2)) then
@@ -729,7 +729,7 @@ function draw_title()
   7 - (players == 1 and 2 or 0)) 
   --gray out if 1p
  print("b  ai battle game", 48, 76, 7)
- print("c  canoe trip", 48, 88, 7)
+ --print("c  canoe trip", 48, 88, 7)
  -- cursor
  local sely = 64 + mselect * 12
  spr(34, 20, sely)
